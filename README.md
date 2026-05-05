@@ -1,5 +1,7 @@
 # ABCNote
 
+![ABCNote screenshot](ScreenShot.png)
+
 Anything and everything. Just documenting life.
 
 This started as a personal project for my own use, but I've decided to open-source it. Feel free to fork it, tweak it, and let your imagination run wild!
