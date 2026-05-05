@@ -28,7 +28,6 @@ ui_*.h
 *.qmlc
 *.jsc
 Makefile*
-*build-*
 build/
 *.qm
 *.prl
@@ -54,3 +53,17 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# Local IDE settings
+.vscode/
+
+# Build and release outputs
+build/
+build-*/
+deploy/
+Design/
+
+# Local logs and test output
+*.log
+test-output.txt
+single-test-output.txt
