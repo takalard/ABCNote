@@ -13,11 +13,11 @@ Item {
         // pageCanvas is the white paper-like surface for one daily note.
         id: pageCanvas
 
-        // Width is responsive but capped for comfortable reading.
-        width: Math.min(parent.width * 0.9, 860)
+        // Width nearly fills the right-side note area while keeping a small edge gap.
+        width: Math.max(0, parent.width - 20)
 
         // Height expands with editor content while preserving a useful minimum.
-        height: Math.max(420, contentColumn.implicitHeight + 80)
+        height: Math.max(420, contentColumn.implicitHeight + 20)
 
         // Center the page in the content stream.
         anchors.centerIn: parent
@@ -38,11 +38,13 @@ Item {
             // contentColumn stacks title, editor, divider, and summary.
             id: contentColumn
 
+            property bool previewMode: false
+
             // Fill the paper page while respecting margins.
             anchors.fill: parent
 
-            // margins create the writing area inside the paper.
-            anchors.margins: 40
+            // margins keep the writing area close to the paper edge.
+            anchors.margins: 10
 
             // spacing separates daily note sections.
             spacing: 16
@@ -64,6 +66,83 @@ Item {
                 Layout.fillWidth: true
             }
 
+            RowLayout {
+                // Mode switch keeps editing and Markdown preview on the same daily page.
+                Layout.fillWidth: true
+                spacing: 8
+
+                Item {
+                    Layout.fillWidth: true
+                }
+
+                Rectangle {
+                    // Segmented control is compact so the writing surface stays primary.
+                    Layout.preferredWidth: 160
+                    Layout.preferredHeight: 34
+                    radius: 6
+                    color: "#f3f5f7"
+                    border.color: "#d7dde5"
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 3
+                        spacing: 3
+
+                        Button {
+                            text: i18n.t("notes.edit")
+                            checkable: true
+                            checked: !contentColumn.previewMode
+                            flat: true
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            background: Rectangle {
+                                radius: 5
+                                color: parent.checked ? "#ffffff" : "transparent"
+                                border.color: parent.checked ? "#cdd7e6" : "transparent"
+                            }
+
+                            contentItem: Text {
+                                text: parent.text
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                color: parent.checked ? "#1d4f91" : "#5f6975"
+                                font.pixelSize: 12
+                                font.bold: parent.checked
+                            }
+
+                            onClicked: contentColumn.previewMode = false
+                        }
+
+                        Button {
+                            text: i18n.t("notes.preview")
+                            checkable: true
+                            checked: contentColumn.previewMode
+                            flat: true
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+
+                            background: Rectangle {
+                                radius: 5
+                                color: parent.checked ? "#ffffff" : "transparent"
+                                border.color: parent.checked ? "#cdd7e6" : "transparent"
+                            }
+
+                            contentItem: Text {
+                                text: parent.text
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                                color: parent.checked ? "#1d4f91" : "#5f6975"
+                                font.pixelSize: 12
+                                font.bold: parent.checked
+                            }
+
+                            onClicked: contentColumn.previewMode = true
+                        }
+                    }
+                }
+            }
+
             TextArea {
                 // bodyEditor is the editable note body for this date.
                 id: bodyEditor
@@ -83,6 +162,11 @@ Item {
                 // Body text color is dark but softer than pure black.
                 color: "#222222"
 
+                leftPadding: 0
+                rightPadding: 0
+                topPadding: 0
+                bottomPadding: 0
+
                 // selectedTextColor ensures selected text remains readable.
                 selectedTextColor: "white"
 
@@ -91,6 +175,8 @@ Item {
 
                 // Fill the paper writing width.
                 Layout.fillWidth: true
+
+                visible: !contentColumn.previewMode
 
                 // preferredHeight grows with content but starts with a useful empty-note size.
                 Layout.preferredHeight: Math.max(180, contentHeight + 24)
@@ -103,6 +189,32 @@ Item {
                     if (activeFocus) {
                         noteController.updateNoteBody(noteId, text)
                     }
+                }
+            }
+
+            Rectangle {
+                id: markdownPreviewPanel
+                visible: contentColumn.previewMode
+                Layout.fillWidth: true
+                Layout.preferredHeight: Math.max(220, markdownPreview.implicitHeight + 20)
+                radius: 8
+                color: "#fbfcfd"
+                border.color: "#dfe6ef"
+
+                Text {
+                    id: markdownPreview
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 10
+                    text: contentBody.trim().length > 0 ? contentBody : i18n.t("notes.previewEmpty")
+                    textFormat: Text.MarkdownText
+                    wrapMode: Text.Wrap
+                    color: contentBody.trim().length > 0 ? "#20252b" : "#8a95a3"
+                    linkColor: "#2568b8"
+                    font.pixelSize: 16
+                    lineHeight: 1.22
+                    lineHeightMode: Text.ProportionalHeight
                 }
             }
 

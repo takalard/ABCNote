@@ -4,7 +4,7 @@ namespace BuildInfo
 {
 inline constexpr const char *version()
 {
-    return "1.0.1.20260505";
+    return "1.0.1.20260508";
 }
 
 inline constexpr int versionMajor()
@@ -24,6 +24,6 @@ inline constexpr int versionPatch()
 
 inline constexpr int versionDate()
 {
-    return 20260505;
+    return 20260508;
 }
 } // namespace BuildInfo

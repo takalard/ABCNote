@@ -10,6 +10,68 @@
 #include <algorithm>
 #include <utility>
 
+namespace {
+
+constexpr int kSchemaVersion = 2;
+constexpr qsizetype kCompressionLevel = 9;
+const char kPayloadPrefix[] = "ABCN1.";
+const char kPayloadEncoding[] = "abcnote-packed-v1";
+const char kBodyFormat[] = "markdown";
+
+QByteArray payloadKey()
+{
+    return QByteArrayLiteral("ABCNote::PackedNotePayload::v1");
+}
+
+QByteArray applyPayloadMask(QByteArray bytes)
+{
+    const QByteArray key = payloadKey();
+    for (qsizetype i = 0; i < bytes.size(); ++i) {
+        bytes[i] = static_cast<char>(bytes.at(i) ^ key.at(i % key.size()));
+    }
+    return bytes;
+}
+
+QString packPayload(const Note &note)
+{
+    QJsonObject payloadObject;
+    payloadObject.insert(QStringLiteral("contentBody"), note.contentBody);
+    payloadObject.insert(QStringLiteral("aiSummary"), note.aiSummary);
+
+    const QByteArray jsonBytes = QJsonDocument(payloadObject).toJson(QJsonDocument::Compact);
+    const QByteArray compressedBytes = qCompress(jsonBytes, kCompressionLevel);
+    const QByteArray packedBytes = applyPayloadMask(compressedBytes);
+    const QString encoded = QString::fromLatin1(packedBytes.toBase64(QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals));
+    return QString::fromLatin1(kPayloadPrefix) + encoded;
+}
+
+bool unpackPayload(const QString &packedPayload, Note *note)
+{
+    if (note == nullptr || !packedPayload.startsWith(QLatin1String(kPayloadPrefix))) {
+        return false;
+    }
+
+    const QString encoded = packedPayload.mid(QString::fromLatin1(kPayloadPrefix).size());
+    const QByteArray packedBytes = QByteArray::fromBase64(encoded.toLatin1(), QByteArray::Base64UrlEncoding | QByteArray::OmitTrailingEquals);
+    const QByteArray compressedBytes = applyPayloadMask(packedBytes);
+    const QByteArray jsonBytes = qUncompress(compressedBytes);
+    if (jsonBytes.isEmpty()) {
+        return false;
+    }
+
+    const QJsonDocument document = QJsonDocument::fromJson(jsonBytes);
+    if (!document.isObject()) {
+        return false;
+    }
+
+    const QJsonObject object = document.object();
+    note->contentBody = object.value(QStringLiteral("contentBody")).toString();
+    note->aiSummary = object.value(QStringLiteral("aiSummary")).toString();
+    return true;
+}
+
+} // namespace
+
 NoteStorage::NoteStorage(QString rootPath)
     // Move the caller-provided root path because the storage object owns this path value.
     : m_rootPath(std::move(rootPath))
@@ -57,16 +119,20 @@ Note NoteStorage::load(const QDate &date) const
         // object contains the persisted note fields.
         const QJsonObject object = document.object();
 
-        // note is populated field-by-field so malformed dates can be repaired in memory.
+        // note is populated from the versioned ABCNote payload format.
         Note note;
         note.date = QDate::fromString(object.value(QStringLiteral("date")).toString(), Qt::ISODate);
         if (!note.date.isValid()) {
             // Fall back to the requested date rather than returning an invalid note.
             note.date = date;
         }
-        note.contentBody = object.value(QStringLiteral("contentBody")).toString();
-        note.aiSummary = object.value(QStringLiteral("aiSummary")).toString();
         note.updatedAt = QDateTime::fromString(object.value(QStringLiteral("updatedAt")).toString(), Qt::ISODate);
+        if (object.value(QStringLiteral("schemaVersion")).toInt() != kSchemaVersion
+            || object.value(QStringLiteral("payloadEncoding")).toString() != QLatin1String(kPayloadEncoding)
+            || !unpackPayload(object.value(QStringLiteral("payload")).toString(), &note)) {
+            note.contentBody.clear();
+            note.aiSummary.clear();
+        }
         return note;
     }
 
@@ -127,12 +193,14 @@ bool NoteStorage::save(Note note)
         return false;
     }
 
-    // object mirrors the documented JSON schema.
+    // object keeps only metadata in plaintext; note text lives in the packed payload.
     QJsonObject object;
+    object.insert(QStringLiteral("schemaVersion"), kSchemaVersion);
     object.insert(QStringLiteral("date"), note.date.toString(Qt::ISODate));
-    object.insert(QStringLiteral("contentBody"), note.contentBody);
-    object.insert(QStringLiteral("aiSummary"), note.aiSummary);
+    object.insert(QStringLiteral("bodyFormat"), QLatin1String(kBodyFormat));
     object.insert(QStringLiteral("updatedAt"), note.updatedAt.toString(Qt::ISODate));
+    object.insert(QStringLiteral("payloadEncoding"), QLatin1String(kPayloadEncoding));
+    object.insert(QStringLiteral("payload"), packPayload(note));
 
     // file writes to a temporary file first and commits atomically where the platform supports it.
     QSaveFile file(path);

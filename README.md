@@ -73,7 +73,10 @@ data/
       2026-05-02.json
 ```
 
-Each note contains the date, body, generated summary, and last update time.
+Each note stores plaintext metadata such as the date, Markdown body format, and last update time.
+The note body and generated summary are packed into ABCNote's own non-plaintext payload format, so
+opening the JSON file directly does not show the diary content. ABCNote can decode this format on any
+machine without binding the data to a specific Windows user or device.
 
 If a persisted note is cleared to empty text, its JSON file is removed and the date disappears from the left navigation. The left navigation shows only persisted non-empty notes, and year/month rows can be expanded or collapsed.
 

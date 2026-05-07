@@ -2,6 +2,8 @@
 
 #include <QDir>
 #include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QSignalSpy>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -30,6 +32,12 @@ private slots:
 
     // Verifies that JSON persistence round-trips note fields.
     void storageSavesAndLoadsJson();
+
+    // Verifies Markdown notes are stored in ABCNote's packed non-plaintext JSON format.
+    void storageSavesMarkdownAsPackedJsonWithoutPlaintext();
+
+    // Verifies legacy plaintext body fields are not treated as readable note content.
+    void storageIgnoresLegacyPlaintextJson();
 
     // Verifies that saving empty notes does not leave persisted JSON files behind.
     void storageDeletesEmptyNotes();
@@ -175,6 +183,72 @@ void ABCNoteTests::storageSavesAndLoadsJson()
     QCOMPARE(loaded.date, note.date);
     QCOMPARE(loaded.contentBody, note.contentBody);
     QCOMPARE(loaded.aiSummary, note.aiSummary);
+}
+
+void ABCNoteTests::storageSavesMarkdownAsPackedJsonWithoutPlaintext()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    NoteStorage storage(dir.path());
+
+    Note note;
+    note.date = QDate(2026, 5, 7);
+    note.contentBody = QStringLiteral("# 今日记录\n\n- 写完 **Markdown** 预览\n- 打包正文数据");
+    note.aiSummary = QStringLiteral("完成 Markdown 和非明文存储。");
+    note.updatedAt = QDateTime(QDate(2026, 5, 7), QTime(20, 30, 0));
+
+    QVERIFY(storage.save(note));
+
+    QFile file(storage.filePathForDate(note.date));
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    const QByteArray bytes = file.readAll();
+    file.close();
+
+    const QJsonObject object = QJsonDocument::fromJson(bytes).object();
+    QCOMPARE(object.value(QStringLiteral("schemaVersion")).toInt(), 2);
+    QCOMPARE(object.value(QStringLiteral("bodyFormat")).toString(), QStringLiteral("markdown"));
+    QCOMPARE(object.value(QStringLiteral("payloadEncoding")).toString(), QStringLiteral("abcnote-packed-v1"));
+    QVERIFY(!object.contains(QStringLiteral("contentBody")));
+    QVERIFY(!object.contains(QStringLiteral("aiSummary")));
+
+    const QString fileText = QString::fromUtf8(bytes);
+    QVERIFY(!fileText.contains(note.contentBody));
+    QVERIFY(!fileText.contains(note.aiSummary));
+    QVERIFY(object.value(QStringLiteral("payload")).toString().startsWith(QStringLiteral("ABCN1.")));
+
+    const Note loaded = storage.load(note.date);
+    QCOMPARE(loaded.date, note.date);
+    QCOMPARE(loaded.contentBody, note.contentBody);
+    QCOMPARE(loaded.aiSummary, note.aiSummary);
+    QCOMPARE(loaded.updatedAt, note.updatedAt);
+}
+
+void ABCNoteTests::storageIgnoresLegacyPlaintextJson()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    NoteStorage storage(dir.path());
+    const QDate date(2026, 5, 8);
+    const QString path = storage.filePathForDate(date);
+    QVERIFY(QDir().mkpath(QFileInfo(path).absolutePath()));
+
+    QFile file(path);
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write(R"({
+    "date": "2026-05-08",
+    "contentBody": "Legacy plaintext body",
+    "aiSummary": "Legacy plaintext summary",
+    "updatedAt": "2026-05-08T09:10:11"
+})");
+    file.close();
+
+    const Note loaded = storage.load(date);
+    QCOMPARE(loaded.date, date);
+    QVERIFY(loaded.contentBody.isEmpty());
+    QVERIFY(loaded.aiSummary.isEmpty());
+    QVERIFY(!storage.existingDates().contains(date));
 }
 
 void ABCNoteTests::storageDeletesEmptyNotes()
@@ -343,7 +417,7 @@ void ABCNoteTests::localizationDefaultsToEnglishAndListsLanguages()
 
 void ABCNoteTests::buildInfoExposesReleaseVersion()
 {
-    QCOMPARE(QString::fromLatin1(BuildInfo::version()), QStringLiteral("1.0.1.20260505"));
+    QCOMPARE(QString::fromLatin1(BuildInfo::version()), QStringLiteral("1.0.1.20260508"));
 }
 
 void ABCNoteTests::localizationPersistsLanguageSelection()

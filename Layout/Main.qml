@@ -626,11 +626,11 @@ ApplicationWindow {
             // spacing separates daily note pages.
             spacing: 20
 
-            // topMargin gives the first paper page room from the toolbar.
-            topMargin: 24
+            // topMargin keeps the first paper page close to the content viewport.
+            topMargin: 10
 
-            // bottomMargin gives the last paper page room from the window bottom.
-            bottomMargin: 24
+            // bottomMargin keeps the last paper page close to the content viewport.
+            bottomMargin: 10
 
             // DragAndOvershootBounds gives a natural scroll feel across platforms.
             boundsBehavior: Flickable.DragAndOvershootBounds
