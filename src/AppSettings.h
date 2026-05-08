@@ -18,6 +18,9 @@ class AppSettings : public QObject
     // Last settings operation status shown in the settings popup.
     Q_PROPERTY(QString statusMessage READ statusMessage NOTIFY statusMessageChanged)
 
+    // Whether all note bodies render as Markdown preview instead of editable text.
+    Q_PROPERTY(bool markdownPreviewMode READ markdownPreviewMode NOTIFY markdownPreviewModeChanged)
+
     // Whether user-enabled AI summary requests are allowed.
     Q_PROPERTY(bool aiSummaryEnabled READ aiSummaryEnabled NOTIFY aiSummarySettingsChanged)
 
@@ -49,6 +52,9 @@ public:
     // Returns the latest settings operation status text.
     QString statusMessage() const;
 
+    // Returns whether daily notes are shown in Markdown preview mode.
+    bool markdownPreviewMode() const;
+
     // Returns whether AI summary requests are user-enabled.
     bool aiSummaryEnabled() const;
 
@@ -79,6 +85,9 @@ public:
     // Accepts a QML FolderDialog URL and switches to the selected local folder.
     Q_INVOKABLE bool migrateAndSwitchDataRootUrl(const QString &targetRootUrl);
 
+    // Persists and applies the global Markdown preview mode.
+    Q_INVOKABLE bool setMarkdownPreviewMode(bool enabled);
+
     // Saves AI summary settings and stores a non-empty API key when provided.
     Q_INVOKABLE bool saveAiSummarySettings(bool enabled,
                                            const QString &baseUrl,
@@ -94,6 +103,9 @@ signals:
 
     // Emitted when statusMessage changes.
     void statusMessageChanged();
+
+    // Emitted when markdownPreviewMode changes.
+    void markdownPreviewModeChanged();
 
     // Emitted when AI summary settings or key presence changes.
     void aiSummarySettingsChanged();
@@ -111,6 +123,9 @@ private:
 
     // Loads the persisted data root or falls back to defaultDataRoot().
     QString loadDataRoot() const;
+
+    // Loads the global Markdown preview preference from QSettings.
+    bool loadMarkdownPreviewMode() const;
 
     // Loads AI summary non-secret settings from QSettings.
     void loadAiSummarySettings();
@@ -150,6 +165,9 @@ private:
 
     // Current note data root.
     QString m_dataRoot;
+
+    // Global UI mode for all note body delegates.
+    bool m_markdownPreviewMode = false;
 
     // User opt-in flag for AI summary calls.
     bool m_aiSummaryEnabled = false;

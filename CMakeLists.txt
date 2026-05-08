@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # Define the ABCNote project and select C++ as the only compiled language.
-project(ABCNote VERSION 1.0.1 LANGUAGES CXX)
+project(ABCNote VERSION 1.0.2 LANGUAGES CXX)
 
 # CMAKE_CXX_STANDARD selects the language level used by all targets.
 set(CMAKE_CXX_STANDARD 17)

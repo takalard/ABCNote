@@ -34,6 +34,7 @@ AppSettings::AppSettings(QString settingsFilePath,
     , m_localization(localization)
     , m_applicationDirPath(std::move(applicationDirPath))
     , m_dataRoot(loadDataRoot())
+    , m_markdownPreviewMode(loadMarkdownPreviewMode())
 {
     loadAiSummarySettings();
 }
@@ -51,6 +52,11 @@ QString AppSettings::dataRoot() const
 QString AppSettings::statusMessage() const
 {
     return m_statusMessage;
+}
+
+bool AppSettings::markdownPreviewMode() const
+{
+    return m_markdownPreviewMode;
 }
 
 bool AppSettings::aiSummaryEnabled() const
@@ -138,6 +144,22 @@ bool AppSettings::migrateAndSwitchDataRootUrl(const QString &targetRootUrl)
     return migrateAndSwitchDataRoot(localPath);
 }
 
+bool AppSettings::setMarkdownPreviewMode(bool enabled)
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    settings.setValue(QStringLiteral("ui/markdownPreviewMode"), enabled);
+    settings.sync();
+    if (settings.status() != QSettings::NoError) {
+        return false;
+    }
+
+    if (m_markdownPreviewMode != enabled) {
+        m_markdownPreviewMode = enabled;
+        emit markdownPreviewModeChanged();
+    }
+    return true;
+}
+
 bool AppSettings::saveAiSummarySettings(bool enabled, const QString &baseUrl, const QString &model, const QString &apiKey)
 {
     const QString cleanBaseUrl = baseUrl.trimmed();
@@ -192,6 +214,12 @@ QString AppSettings::loadDataRoot() const
         return QDir::cleanPath(persisted);
     }
     return QDir::cleanPath(defaultDataRoot());
+}
+
+bool AppSettings::loadMarkdownPreviewMode() const
+{
+    QSettings settings(m_settingsFilePath, QSettings::IniFormat);
+    return settings.value(QStringLiteral("ui/markdownPreviewMode"), false).toBool();
 }
 
 void AppSettings::loadAiSummarySettings()

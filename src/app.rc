@@ -3,8 +3,8 @@
 IDI_ICON1 ICON "../assets/icon/ABCNote.ico"
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,1,20260508
- PRODUCTVERSION 1,0,1,20260508
+ FILEVERSION 1,0,2,20260508
+ PRODUCTVERSION 1,0,2,20260508
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -21,11 +21,11 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "ABCNote"
             VALUE "FileDescription", "ABCNote"
-            VALUE "FileVersion", "1.0.1.20260508"
+            VALUE "FileVersion", "1.0.2.20260508"
             VALUE "InternalName", "ABCNote"
             VALUE "OriginalFilename", "ABCNote.exe"
             VALUE "ProductName", "ABCNote"
-            VALUE "ProductVersion", "1.0.1.20260508"
+            VALUE "ProductVersion", "1.0.2.20260508"
         END
     END
     BLOCK "VarFileInfo"

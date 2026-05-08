@@ -117,6 +117,9 @@ private slots:
     // Verifies AI summary settings persist non-secret fields and track a saved user API key.
     void appSettingsPersistsAiSummarySettings();
 
+    // Verifies Markdown preview mode is a global UI preference persisted in settings.
+    void appSettingsPersistsMarkdownPreviewMode();
+
     // Verifies clearing the AI API key makes AI summary unavailable.
     void appSettingsClearsAiApiKey();
 };
@@ -417,7 +420,7 @@ void ABCNoteTests::localizationDefaultsToEnglishAndListsLanguages()
 
 void ABCNoteTests::buildInfoExposesReleaseVersion()
 {
-    QCOMPARE(QString::fromLatin1(BuildInfo::version()), QStringLiteral("1.0.1.20260508"));
+    QCOMPARE(QString::fromLatin1(BuildInfo::version()), QStringLiteral("1.0.2.20260508"));
 }
 
 void ABCNoteTests::localizationPersistsLanguageSelection()
@@ -910,6 +913,33 @@ void ABCNoteTests::appSettingsPersistsAiSummarySettings()
     QCOMPARE(second.aiApiKey(), QStringLiteral("abc-secret-key"));
 
     QVERIFY(second.clearAiApiKey());
+}
+
+void ABCNoteTests::appSettingsPersistsMarkdownPreviewMode()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    const QString settingsPath = QDir(dir.path()).filePath("settings.ini");
+    const QString appDir = QDir(dir.path()).filePath("app");
+    QVERIFY(QDir().mkpath(appDir));
+
+    AppSettings first(settingsPath, appDir);
+    QVERIFY(!first.markdownPreviewMode());
+    QSignalSpy changedSpy(&first, &AppSettings::markdownPreviewModeChanged);
+
+    QVERIFY(first.setMarkdownPreviewMode(true));
+    QVERIFY(first.markdownPreviewMode());
+    QCOMPARE(changedSpy.count(), 1);
+
+    AppSettings second(settingsPath, appDir);
+    QVERIFY(second.markdownPreviewMode());
+
+    QVERIFY(second.setMarkdownPreviewMode(false));
+    QVERIFY(!second.markdownPreviewMode());
+
+    AppSettings third(settingsPath, appDir);
+    QVERIFY(!third.markdownPreviewMode());
 }
 
 void ABCNoteTests::appSettingsClearsAiApiKey()

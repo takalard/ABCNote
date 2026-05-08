@@ -38,8 +38,6 @@ Item {
             // contentColumn stacks title, editor, divider, and summary.
             id: contentColumn
 
-            property bool previewMode: false
-
             // Fill the paper page while respecting margins.
             anchors.fill: parent
 
@@ -64,83 +62,6 @@ Item {
 
                 // Fill width so long localized dates wrap if needed.
                 Layout.fillWidth: true
-            }
-
-            RowLayout {
-                // Mode switch keeps editing and Markdown preview on the same daily page.
-                Layout.fillWidth: true
-                spacing: 8
-
-                Item {
-                    Layout.fillWidth: true
-                }
-
-                Rectangle {
-                    // Segmented control is compact so the writing surface stays primary.
-                    Layout.preferredWidth: 160
-                    Layout.preferredHeight: 34
-                    radius: 6
-                    color: "#f3f5f7"
-                    border.color: "#d7dde5"
-
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 3
-                        spacing: 3
-
-                        Button {
-                            text: i18n.t("notes.edit")
-                            checkable: true
-                            checked: !contentColumn.previewMode
-                            flat: true
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            background: Rectangle {
-                                radius: 5
-                                color: parent.checked ? "#ffffff" : "transparent"
-                                border.color: parent.checked ? "#cdd7e6" : "transparent"
-                            }
-
-                            contentItem: Text {
-                                text: parent.text
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                color: parent.checked ? "#1d4f91" : "#5f6975"
-                                font.pixelSize: 12
-                                font.bold: parent.checked
-                            }
-
-                            onClicked: contentColumn.previewMode = false
-                        }
-
-                        Button {
-                            text: i18n.t("notes.preview")
-                            checkable: true
-                            checked: contentColumn.previewMode
-                            flat: true
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-
-                            background: Rectangle {
-                                radius: 5
-                                color: parent.checked ? "#ffffff" : "transparent"
-                                border.color: parent.checked ? "#cdd7e6" : "transparent"
-                            }
-
-                            contentItem: Text {
-                                text: parent.text
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                                color: parent.checked ? "#1d4f91" : "#5f6975"
-                                font.pixelSize: 12
-                                font.bold: parent.checked
-                            }
-
-                            onClicked: contentColumn.previewMode = true
-                        }
-                    }
-                }
             }
 
             TextArea {
@@ -176,7 +97,7 @@ Item {
                 // Fill the paper writing width.
                 Layout.fillWidth: true
 
-                visible: !contentColumn.previewMode
+                visible: !appSettings.markdownPreviewMode
 
                 // preferredHeight grows with content but starts with a useful empty-note size.
                 Layout.preferredHeight: Math.max(180, contentHeight + 24)
@@ -194,7 +115,7 @@ Item {
 
             Rectangle {
                 id: markdownPreviewPanel
-                visible: contentColumn.previewMode
+                visible: appSettings.markdownPreviewMode
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.max(220, markdownPreview.implicitHeight + 20)
                 radius: 8

@@ -74,6 +74,73 @@ ApplicationWindow {
                 Layout.rightMargin: 4
             }
 
+            Rectangle {
+                // Global Markdown mode switch applies to every daily note.
+                Layout.preferredWidth: 160
+                Layout.preferredHeight: 34
+                radius: 6
+                color: "#f3f5f7"
+                border.color: "#d7dde5"
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 3
+                    spacing: 3
+
+                    Button {
+                        text: i18n.t("notes.edit")
+                        checkable: true
+                        checked: !appSettings.markdownPreviewMode
+                        flat: true
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        background: Rectangle {
+                            radius: 5
+                            color: parent.checked ? "#ffffff" : "transparent"
+                            border.color: parent.checked ? "#cdd7e6" : "transparent"
+                        }
+
+                        contentItem: Text {
+                            text: parent.text
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            color: parent.checked ? "#1d4f91" : "#5f6975"
+                            font.pixelSize: 12
+                            font.bold: parent.checked
+                        }
+
+                        onClicked: appSettings.setMarkdownPreviewMode(false)
+                    }
+
+                    Button {
+                        text: i18n.t("notes.preview")
+                        checkable: true
+                        checked: appSettings.markdownPreviewMode
+                        flat: true
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        background: Rectangle {
+                            radius: 5
+                            color: parent.checked ? "#ffffff" : "transparent"
+                            border.color: parent.checked ? "#cdd7e6" : "transparent"
+                        }
+
+                        contentItem: Text {
+                            text: parent.text
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            color: parent.checked ? "#1d4f91" : "#5f6975"
+                            font.pixelSize: 12
+                            font.bold: parent.checked
+                        }
+
+                        onClicked: appSettings.setMarkdownPreviewMode(true)
+                    }
+                }
+            }
+
             ToolButton {
                 // The gear opens data-directory settings.
                 id: settingsButton
